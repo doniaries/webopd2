@@ -219,5 +219,15 @@ class Post extends Model
 
         return null;
     }
+
+    /**
+     * Get the tags for the post.
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id')
+            ->withPivot('team_id')
+            ->withTimestamps();
+    }
     // Event handling moved to PostObserver
 }
