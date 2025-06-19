@@ -146,9 +146,7 @@ class PostResource extends Resource
                                             ->native(false)
                                             ->visible(fn(Forms\Get $get) => $get('status') === 'published'),
 
-                                        Forms\Components\Toggle::make('is_featured')
-                                            ->label('Tampilkan Sebagai Unggulan')
-                                            ->inline(false),
+
                                     ]),
 
                                 // Category Section
