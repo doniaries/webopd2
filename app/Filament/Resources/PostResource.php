@@ -18,7 +18,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class PostResource extends Resource
 {
@@ -171,15 +170,27 @@ class PostResource extends Resource
                                 Forms\Components\Section::make('Informasi Tambahan')
                                     ->description('Informasi tambahan artikel')
                                     ->schema([
-                                        Forms\Components\Hidden::make('user_id')
-                                            ->default(fn() => Auth::id())
-                                            ->dehydrated(),
+                                        // User ID
+                                        Forms\Components\TextInput::make('user.name')
+                                            ->readonly(function () {
+                                                return !auth()->user()->hasRole('superadmin');
+                                            }),
 
-                                        Forms\Components\Hidden::make('views')
+                                        // Views Counter - Dapat dilihat oleh semua tetapi hanya dapat diedit oleh superadmin
+                                        Forms\Components\TextInput::make('views')
+                                            ->label('Jumlah View')
+                                            ->numeric()
                                             ->default(0)
-                                            ->default(fn() => Auth::id())
-                                            ->dehydrated(),
-                                    ]),
+                                            ->readonly(function () {
+                                                // PERBAIKI: Gunakan 'super_admin' sesuai dengan nama di database Anda
+                                                return !auth()->user()->hasRole('super_admin');
+                                            })
+                                            ->dehydrated(function (callable $get) {
+                                                // PERBAIKI: Gunakan 'super_admin' sesuai dengan nama di database Anda
+                                                return auth()->user()->hasRole('super_admin') ? $get('views') : null;
+                                            })
+                                            ->visible(true),
+                                    ])
                             ])
                             ->columnSpan(1),
                     ])
@@ -196,6 +207,10 @@ class PostResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
+                    ->sortable(),
+                // Kolom Views - Terlihat oleh semua pengguna
+                Tables\Columns\TextColumn::make('views')
+                    ->label('Views')
                     ->sortable(),
                 Tables\Columns\ImageColumn::make('featured_image_url')
                     ->label('Featured Image')
@@ -224,7 +239,7 @@ class PostResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Penulis')
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\IconColumn::make('status')
                     ->label('Status')
                     ->colors([
                         'danger' => 'draft',
@@ -240,10 +255,7 @@ class PostResource extends Resource
                     ->label('Tanggal Publikasi')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('views')
-                    ->label('Dilihat')
-                    ->numeric()
-                    ->sortable(),
+                // Kolom views sudah didefinisikan sebelumnya
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y')
