@@ -53,12 +53,8 @@ class PostResource extends Resource
                                                 $set('slug', \Illuminate\Support\Str::slug($state));
                                             }),
 
-                                        Forms\Components\TextInput::make('slug')
-                                            ->label('Slug')
-                                            ->required()
-                                            ->unique(ignoreRecord: true)
-                                            ->helperText('URL-friendly version dari judul. Akan otomatis dibuat dari judul.')
-                                            ->maxLength(255),
+                                        Forms\Components\Hidden::make('slug')
+                                            ->required(),
 
                                         Forms\Components\RichEditor::make('content')
                                             ->label('Isi Artikel')
@@ -177,16 +173,14 @@ class PostResource extends Resource
                                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
                                                         $set('slug', \Illuminate\Support\Str::slug($state));
                                                     }),
-                                                    
-                                                Forms\Components\TextInput::make('slug')
-                                                    ->label('Slug')
+
+                                                Forms\Components\Hidden::make('slug')
                                                     ->required()
-                                                    ->maxLength(255)
-                                                    ->unique(table: 'categories'),
-                                                    
+                                                    ->unique(ignoreRecord: true),
+
                                                 Forms\Components\Hidden::make('team_id')
                                                     ->default(fn() => auth()->user()->teams->first()?->id),
-                                                    
+
                                                 Forms\Components\Toggle::make('is_active')
                                                     ->label('Aktif')
                                                     ->default(true),
@@ -306,7 +300,7 @@ class PostResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Penulis')
                     ->sortable(),
-                Tables\Columns\IconColumn::make('status')
+                Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->colors([
                         'danger' => 'draft',
@@ -401,16 +395,9 @@ class PostResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-
-        // Jika user tidak memiliki tim, jangan tampilkan apa-apa
-        if (Auth::user() && $teamId = Auth::user()->teams->first()?->id) {
-            $query->where('team_id', $teamId);
-        } elseif (Auth::user()) {
-            // Jika user tidak memiliki tim, pastikan tidak ada yang ditampilkan
-            $query->whereNull('id');
-        }
-
-        return $query;
+        return parent::getEloquentQuery()
+            ->when(!auth()->user()->hasRole('super_admin'), function ($query) {
+                $query->where('team_id', auth()->user()->teams->first()?->id);
+            });
     }
 }

@@ -24,8 +24,9 @@ class DatabaseSeeder extends Seeder
             // Seeders untuk konten
             PengaturanSeeder::class,
             CategorySeeder::class,
+            TagSeeder::class,
             PostSeeder::class,
-            CategoryPostSeeder::class,
+            PostCategorySeeder::class,
         ]);
     }
 }

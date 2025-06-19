@@ -17,11 +17,6 @@ class Category extends Model
         'team_id',
         'name',
         'slug',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
     ];
 
     protected $dates = [
@@ -44,21 +39,5 @@ class Category extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
-    }
-
-    /**
-     * Scope a query to only include active categories.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope a query to order categories by order column.
-     */
-    public function scopeOrdered($query, $direction = 'asc')
-    {
-        return $query->orderBy('order', $direction);
     }
 }

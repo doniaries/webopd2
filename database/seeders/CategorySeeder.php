@@ -42,7 +42,6 @@ class CategorySeeder extends Seeder
                     ],
                     [
                         'slug' => Str::slug($categoryName),
-                        'is_active' => true,
                     ]
                 );
             }

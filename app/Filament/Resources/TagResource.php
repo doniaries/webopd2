@@ -2,30 +2,26 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
-use App\Enums\CategoryType;
+use App\Filament\Resources\TagResource\Pages;
+use App\Filament\Resources\TagResource\RelationManagers;
+use App\Models\Tag;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Str;
 
-class CategoryResource extends Resource
+class TagResource extends Resource
 {
-    protected static ?string $model = Category::class;
+    protected static ?string $model = Tag::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $navigationLabel = 'Kategori';
-    protected static ?string $modelLabel = 'Kategori';
-    protected static ?int $navigationSort = 3;
-    protected static ?string $pluralModelLabel = 'Kategori';
-    // protected static bool $isScopedToTenant = false;
+    protected static ?string $navigationLabel = 'Tag';
+    protected static ?string $modelLabel = 'Tag';
+    protected static ?string $pluralModelLabel = 'Tag';
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
     {
@@ -36,19 +32,19 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('team_id')
+                    ->required()
+                    ->numeric(),
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        $set('slug', Str::slug($state));
-                    })
                     ->maxLength(255),
-                Forms\Components\Hidden::make('slug')
-                    ->required(),
-
-                Forms\Components\Hidden::make('team_id')
-                    ->default(fn() => auth()->user()->teams->first()?->id)
-                    ->required(),
+                Forms\Components\TextInput::make('slug')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('color')
+                    ->required()
+                    ->maxLength(20)
+                    ->default('#6c757d'),
             ]);
     }
 
@@ -56,15 +52,12 @@ class CategoryResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('slug')
+                Tables\Columns\TextColumn::make('team_id')
                     ->hidden(),
-                Tables\Columns\TextColumn::make('posts_count')
-                    ->label('Jumlah Post')
-                    ->counts('posts')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('slug')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -101,24 +94,9 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'index' => Pages\ListTags::route('/'),
+            'create' => Pages\CreateTag::route('/create'),
+            'edit' => Pages\EditTag::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-
-        // Filter kategori berdasarkan team pengguna saat ini
-        if (auth()->user() && $teamId = auth()->user()->teams->first()?->id) {
-            $query->where('team_id', $teamId);
-        } elseif (auth()->user()) {
-            // Jika user tidak memiliki tim, pastikan tidak ada yang ditampilkan
-            $query->whereNull('id');
-        }
-
-        return $query;
     }
 }

@@ -33,6 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->spa()
+            ->brandName('Website')
             ->sidebarCollapsibleOnDesktop()
             ->font('Poppins')
             ->breadcrumbs(false)

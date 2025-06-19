@@ -8,7 +8,7 @@ use App\Models\Team;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class CategoryPostSeeder extends Seeder
+class PostCategorySeeder extends Seeder
 {
     /**
      * Run the database seeds.
