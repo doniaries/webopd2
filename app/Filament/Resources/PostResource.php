@@ -53,12 +53,12 @@ class PostResource extends Resource
                                                 $set('slug', \Illuminate\Support\Str::slug($state));
                                             }),
 
-                                        Forms\Components\Hidden::make('slug')
+                                        Forms\Components\TextInput::make('slug')
                                             ->label('Slug')
                                             ->required()
-                                            ->default(fn() => \Illuminate\Support\Str::slug($form->getState('title')))
                                             ->unique(ignoreRecord: true)
-                                            ->helperText('URL-friendly version of the title'),
+                                            ->helperText('URL-friendly version dari judul. Akan otomatis dibuat dari judul.')
+                                            ->maxLength(255),
 
                                         Forms\Components\RichEditor::make('content')
                                             ->label('Isi Artikel')
@@ -160,11 +160,42 @@ class PostResource extends Resource
                                     ->description('Pilih kategori artikel')
                                     ->schema([
                                         Forms\Components\Select::make('category_id')
-                                            ->relationship('category', 'name')
-                                            ->label('')
+                                            ->relationship('category', 'name', function ($query) {
+                                                // Filter kategori berdasarkan team yang sama dengan user yang login
+                                                return $query->where('team_id', auth()->user()->teams->first()?->id);
+                                            })
+                                            ->label('Kategori')
                                             ->preload()
                                             ->searchable()
-                                            ->required(),
+                                            ->required()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->label('Nama Kategori')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->live(onBlur: true)
+                                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                                        $set('slug', \Illuminate\Support\Str::slug($state));
+                                                    }),
+                                                    
+                                                Forms\Components\TextInput::make('slug')
+                                                    ->label('Slug')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->unique(table: 'categories'),
+                                                    
+                                                Forms\Components\Hidden::make('team_id')
+                                                    ->default(fn() => auth()->user()->teams->first()?->id),
+                                                    
+                                                Forms\Components\Toggle::make('is_active')
+                                                    ->label('Aktif')
+                                                    ->default(true),
+                                            ])
+                                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                                                return $action
+                                                    ->label('Tambah Kategori Baru')
+                                                    ->icon('heroicon-o-plus-circle');
+                                            }),
                                     ]),
 
                                 // Additional Info Section

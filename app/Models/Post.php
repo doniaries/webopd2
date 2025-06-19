@@ -48,34 +48,7 @@ class Post extends Model
      *
      * @return string|null
      */
-    public function getFeaturedImageUrlAttribute()
-    {
-        if ($this->featured_image) {
-            // If it's already a full URL, return as is
-            if (filter_var($this->featured_image, FILTER_VALIDATE_URL)) {
-                return $this->featured_image;
-            }
 
-            // Ensure the path is relative to storage
-            $imagePath = trim($this->featured_image, '/');
-
-            // Check if file exists in storage
-            if (Storage::disk('public')->exists($imagePath)) {
-                return asset('storage/' . $imagePath);
-            }
-
-
-            // If not found, try in featured-images directory
-            if (strpos($imagePath, 'featured-images/') === false) {
-                $imagePath = 'featured-images/' . $imagePath;
-                if (Storage::disk('public')->exists($imagePath)) {
-                    return asset('storage/' . $imagePath);
-                }
-            }
-        }
-
-        return null;
-    }
 
     /**
      * Get the gallery images with full URLs
@@ -218,5 +191,33 @@ class Post extends Model
         $this->increment('views');
     }
 
+    public function getFeaturedImageUrlAttribute()
+    {
+        if ($this->featured_image) {
+            // If it's already a full URL, return as is
+            if (filter_var($this->featured_image, FILTER_VALIDATE_URL)) {
+                return $this->featured_image;
+            }
+
+            // Ensure the path is relative to storage
+            $imagePath = trim($this->featured_image, '/');
+
+            // Check if file exists in storage
+            if (Storage::disk('public')->exists($imagePath)) {
+                return asset('storage/' . $imagePath);
+            }
+
+
+            // If not found, try in featured-images directory
+            if (strpos($imagePath, 'featured-images/') === false) {
+                $imagePath = 'featured-images/' . $imagePath;
+                if (Storage::disk('public')->exists($imagePath)) {
+                    return asset('storage/' . $imagePath);
+                }
+            }
+        }
+
+        return null;
+    }
     // Event handling moved to PostObserver
 }
