@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PostResource extends Resource
@@ -171,10 +172,45 @@ class PostResource extends Resource
                                     ->description('Informasi tambahan artikel')
                                     ->schema([
                                         // User ID
-                                        Forms\Components\TextInput::make('user.name')
-                                            ->readonly(function () {
-                                                return !auth()->user()->hasRole('superadmin');
-                                            }),
+                                        Forms\Components\Select::make('user_id') // Ini akan menyimpan ID user di database
+                                            ->label('Nama User') // Label yang akan terlihat di form
+                                            ->relationship('user', 'name') // Mengambil 'name' dari relasi 'user' untuk ditampilkan di dropdown
+                                            ->default(function (?Model $record) {
+                                                // Otomatis mengisi dengan ID user yang sedang login saat membuat record baru
+                                                if (!$record) { // Jika $record null, berarti sedang dalam mode "create"
+                                                    return auth()->user()->id;
+                                                }
+                                                // Jika sedang mengedit, gunakan ID user yang sudah ada dari record
+                                                return $record->user_id;
+                                            })
+                                            ->searchable() // Memungkinkan pencarian dalam daftar dropdown
+                                            ->preload() // Memuat semua opsi saat pertama kali dibuka (hati-hati jika user terlalu banyak)
+                                            ->required() // Opsional: Jadikan field ini wajib diisi
+                                            ->disabled(function () {
+                                                // Field ini akan dinonaktifkan (disabled) jika user BUKAN 'super_admin'
+                                                // Ingat: Gunakan nama peran yang benar sesuai database Anda ('super_admin' dengan underscore).
+                                                return !auth()->user()->hasRole('super_admin');
+                                            })
+                                            ->dehydrated(function ($state, Forms\Get $get, ?Model $record) {
+                                                // Logika ini memastikan nilai disimpan dengan benar berdasarkan peran dan mode form.
+
+                                                // Jika user adalah 'super_admin', mereka bisa mengubah, dan nilai $state akan disimpan.
+                                                if (auth()->user()->hasRole('super_admin')) {
+                                                    return $state;
+                                                }
+
+                                                // Jika user BUKAN 'super_admin':
+                                                if (!$record) {
+                                                    // Untuk mode "create" oleh non-super_admin, simpan ID user yang sedang login.
+                                                    return auth()->user()->id;
+                                                }
+
+                                                // Untuk mode "edit" oleh non-super_admin, field ini disabled.
+                                                // Data dari field disabled tidak otomatis dikirimkan saat submit.
+                                                // Jadi, kita harus mengembalikan nilai lama ($get('user_id')) agar tidak di-null-kan atau diubah.
+                                                return $get('user_id');
+                                            })
+                                            ->hidden(false), // Pastikan field ini selalu terlihat oleh semua
 
                                         // Views Counter - Dapat dilihat oleh semua tetapi hanya dapat diedit oleh superadmin
                                         Forms\Components\TextInput::make('views')
@@ -185,9 +221,9 @@ class PostResource extends Resource
                                                 // PERBAIKI: Gunakan 'super_admin' sesuai dengan nama di database Anda
                                                 return !auth()->user()->hasRole('super_admin');
                                             })
-                                            ->dehydrated(function (callable $get) {
+                                            ->dehydrated(function ($state, Forms\Get $get, ?Model $record) {
                                                 // PERBAIKI: Gunakan 'super_admin' sesuai dengan nama di database Anda
-                                                return auth()->user()->hasRole('super_admin') ? $get('views') : null;
+                                                return auth()->user()->hasRole('super_admin') ? $state : null;
                                             })
                                             ->visible(true),
                                     ])
